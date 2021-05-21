@@ -133,7 +133,7 @@ void DataStreamCereal::receiveLoop()
   while (_running)
   {
     // timer.start();
-    for (auto sock : poller->poll(-1))
+    for (auto sock : poller->poll(100))
     {
       while (_running)  // drain socket
       {
