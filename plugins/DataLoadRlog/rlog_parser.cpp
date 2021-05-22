@@ -1,23 +1,34 @@
 #include "rlog_parser.hpp"
 
-bool RlogMessageParser::loadDBC(std::string dbc_str) {
-  if (!dbc_str.empty()) {
-    if (dbc_lookup(dbc_str) == nullptr) {
-      return false;
-    }
-    dbc_name = dbc_str;  // is used later to instantiate CANParser
-    packer = std::make_shared<CANPacker>(dbc_name);
+
+RlogMessageParser::RlogMessageParser(const std::string& topic_name, PJ::PlotDataMapRef& plot_data) :
+  MessageParser(topic_name, plot_data)
+{
+  show_deprecated = std::getenv("SHOW_DEPRECATED");
+  if (std::getenv("DBC_NAME") != nullptr)
+  {
+    can_dialog_needed = !loadDBC(std::getenv("DBC_NAME"));
   }
-  return true;
 }
 
-bool RlogMessageParser::parseMessage(const MessageRef msg, double time_stamp)
+bool RlogMessageParser::loadDBC(std::string dbc_str)
 {
+  if (!dbc_str.empty() && dbc_lookup(dbc_str) != nullptr) {
+    dbc_name = dbc_str;  // is used later to instantiate CANParser
+    packer = std::make_shared<CANPacker>(dbc_name);
+    qDebug() << "Loaded DBC:" << dbc_name.c_str();
+    return true;
+  }
+  qDebug() << "Could not load specified DBC file:" << dbc_str.c_str();
   return false;
 }
 
 bool RlogMessageParser::parseMessageCereal(capnp::DynamicStruct::Reader event)
 {
+  if (can_dialog_needed && (event.has("can") || event.has("sendcan"))) {
+    selectDBCDialog();  // prompts for and loads DBC
+  }
+
   double time_stamp = (double)event.get("logMonoTime").as<uint64_t>() / 1e9;
   if (event.has("can")) {
     return parseCanMessage("/can", event.get("can").as<capnp::DynamicList>(), time_stamp);
@@ -150,4 +161,21 @@ bool RlogMessageParser::parseCanMessage(
     parsers[bus]->last_sec = (uint64_t)(time_stamp);
   }
   return true;
+}
+
+void RlogMessageParser::selectDBCDialog() {
+  if (can_dialog_needed)
+  {
+    QStringList dbc_items;
+    dbc_items.append("");
+    for (auto dbc : get_dbcs()) {
+      dbc_items.append(dbc->name);
+    }
+    bool dbc_selected;
+    QString selected_str = QInputDialog::getItem(
+      nullptr, QObject::tr("Select DBC"), QObject::tr("Parse CAN using DBC:"), dbc_items, 0, false, &dbc_selected);
+    if (dbc_selected && !selected_str.isEmpty()) {
+      can_dialog_needed = !loadDBC(selected_str.toStdString());
+    }
+  }
 }

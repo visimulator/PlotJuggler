@@ -2,7 +2,7 @@
 
 #include <QDebug>
 #include <QDialog>
-#include <QElapsedTimer>
+//#include <QElapsedTimer>
 #include <QIntValidator>
 #include <QMessageBox>
 #include <QSettings>
@@ -84,6 +84,7 @@ bool DataStreamCereal::start(QStringList*)
     sockets.push_back(socket);
   }
 
+  parser.selectDBCDialog();  // can't show dialog in a thread so show it now
   _running = true;
   _receive_thread = std::thread(&DataStreamCereal::receiveLoop, this);
 
@@ -116,17 +117,6 @@ void DataStreamCereal::shutdown()
 
 void DataStreamCereal::receiveLoop()
 {
-  std::string dbc_name;
-  if (std::getenv("DBC_NAME") != nullptr) {
-    dbc_name = std::getenv("DBC_NAME");
-  }
-
-  if (!dbc_name.empty()) {
-    if (!parser.loadDBC(dbc_name)) {
-      qDebug() << "Could not load specified DBC file:" << dbc_name.c_str();
-    }
-  }
-
   AlignedBuffer aligned_buf;
   // QElapsedTimer timer;
 

@@ -108,22 +108,6 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
 
       capnp::DynamicStruct::Reader event = tmsg->getRoot<capnp::DynamicStruct>(event_struct_schema);
 
-      if (!can_dialog_tried && (event.has("can") || event.has("sendcan"))) {
-        std::string dbc_name;
-        if (std::getenv("DBC_NAME") != nullptr) {
-          dbc_name = std::getenv("DBC_NAME");
-        }
-        else {
-          dbc_name = SelectDBCDialog();
-        }
-        if (!dbc_name.empty()) {
-          if (!parser.loadDBC(dbc_name)) {
-            qDebug() << "Could not load specified DBC file";
-          }
-        }
-        can_dialog_tried = true;
-      }
-
       parser.parseMessageCereal(event);
     }
     catch (const kj::Exception& e)
@@ -136,27 +120,12 @@ bool DataLoadRlog::readDataFromFile(FileLoadInfo* fileload_info, PlotDataMapRef&
     QApplication::processEvents();
     if(progress_dialog.wasCanceled())
     {
-      return false;
+      return true;  // display what we've already parsed
     }
   }
 
   qDebug() << "Done reading Rlog data"; // unit tests rely on this signal
   return true;
-}
-
-std::string DataLoadRlog::SelectDBCDialog() {
-  QStringList dbc_items;
-  dbc_items.append("");
-  for (auto dbc : get_dbcs()) {
-    dbc_items.append(dbc->name);
-  }
-  bool dbc_selected;
-  QString selected_str = QInputDialog::getItem(
-    nullptr, tr("Select DBC"), tr("Parse CAN using DBC:"), dbc_items, 0, false, &dbc_selected);
-  if (dbc_selected && !selected_str.isEmpty()) {
-    return selected_str.toStdString();
-  }
-  return "";
 }
 
 bool DataLoadRlog::xmlSaveState(QDomDocument& doc, QDomElement& parent_element) const
