@@ -1,0 +1,38 @@
+#ifndef MQTT_DIALOG_H
+#define MQTT_DIALOG_H
+
+#include "ui_datastream_mqtt.h"
+#include "mqtt_client.h"
+#include <QSettings>
+#include <QMessageBox>
+#include <QUuid>
+#include <QIntValidator>
+#include <QTimer>
+
+class MQTT_Dialog: public QDialog
+{
+public:
+  MQTT_Dialog(MQTTClient::Ptr mosq_client);
+
+  ~MQTT_Dialog();
+
+  Ui::DataStreamMQTT* ui;
+
+public slots:
+
+  void onButtonConnect();
+
+  void onUpdateTopicList();
+
+  void onSelectionChanged();
+
+private:
+
+  MQTTClient::Ptr _client;
+
+  QTimer *_topic_list_timer;
+
+  void changeConnectionState(bool connected);
+};
+
+#endif // MQTT_DIALOG_H
