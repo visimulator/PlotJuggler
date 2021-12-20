@@ -85,13 +85,22 @@ bool DataStreamMQTT::start(QStringList *)
   }
   _protocol = _dialog->ui->comboBoxProtocol->currentText();
 
+  // remove all previous subscriptions and create new ones
+  for( const auto& topic: _mosq->config().topics )
+  {
+    _mosq->unsubscribe(topic);
+  }
+
   for (const auto& item: _dialog->ui->listWidget->selectedItems())
   {
     MQTTClient::TopicCallback callback = [this](const mosquitto_message* message)
     {
       onMessageReceived(message);
     };
-    _mosq->addMessageCallback(item->text().toStdString(), callback);
+
+    std::string topic_name = item->text().toStdString();
+    _mosq->subscribe(topic_name, _mosq->config().qos);
+    _mosq->addMessageCallback(topic_name, callback);
   }
 
   _running = true;

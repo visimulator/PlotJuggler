@@ -34,6 +34,10 @@ public:
 
   std::unordered_set<std::string> getTopicList();
 
+  void subscribe(const std::string& topic, int qos );
+
+  void unsubscribe(const std::string& topic );
+
 private:
   mosquitto *_mosq = nullptr;
   std::unordered_map<std::string, TopicCallback> _message_callbacks;

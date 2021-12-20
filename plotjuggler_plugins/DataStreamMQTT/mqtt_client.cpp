@@ -161,3 +161,13 @@ std::unordered_set<std::string> MQTTClient::getTopicList()
   std::unique_lock<std::mutex> lk(_mutex);
   return _topics_set;
 }
+
+void MQTTClient::subscribe(const std::string &topic, int qos)
+{
+  mosquitto_subscribe(_mosq, nullptr, topic.c_str(), qos);
+}
+
+void MQTTClient::unsubscribe(const std::string &topic)
+{
+  mosquitto_unsubscribe(_mosq, nullptr, topic.c_str());
+}
