@@ -188,7 +188,7 @@ void ToolboxQuaternion::generateRPY(GenerateType type)
   if (type == PREVIEW)
   {
     _plot_widget->removeAllCurves();
-    for (const auto& dst_data : dst_vector)
+    for (auto dst_data : dst_vector)
     {
       _plot_widget->addCurve(dst_data->plotName(), *dst_data);
     }
